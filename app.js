@@ -314,6 +314,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Atualiza o estado e a UI imediatamente
                 App.state.discount.active = isActive;
+                App.storage.saveDiscount();
                 App.render.activeDiscountIndicator();
             },
             saveDiscountConfig() {
@@ -335,6 +336,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 };
 
+                App.storage.saveDiscount();
                 App.render.activeDiscountIndicator();
                 App.utils.showNotification(isActive ? 'Promoção ativada!' : 'Promoção desativada.', 'success');
             },
@@ -1838,7 +1840,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const acaiPrice = localStorage.getItem('açaíPricePerKg');
                 const sorvetePrice = localStorage.getItem('sorvetePricePerKg'); 
                 const deletePassword = localStorage.getItem('deletePassword');
-                const openOrders = localStorage.getItem('openOrders'); 
+                const openOrders = localStorage.getItem('openOrders');
+                const discount = localStorage.getItem('discount');
                 
                 if(salesHistory) App.state.salesHistory = JSON.parse(salesHistory);
                 if(expenses) App.state.expenses = JSON.parse(expenses); 
@@ -1846,7 +1849,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 if(acaiPrice) App.state.config.açaíPricePerKg = parseFloat(acaiPrice);
                 if(sorvetePrice) App.state.config.sorvetePricePerKg = parseFloat(sorvetePrice);
                 if(deletePassword) App.state.config.deletePassword = deletePassword;
-                if(openOrders) App.state.openOrders = JSON.parse(openOrders); 
+                if(openOrders) App.state.openOrders = JSON.parse(openOrders);
+                if(discount) App.state.discount = JSON.parse(discount);
             },
             saveSalesHistory() {
                 localStorage.setItem('salesHistory', JSON.stringify(App.state.salesHistory));
@@ -1864,6 +1868,9 @@ document.addEventListener('DOMContentLoaded', () => {
             },
             saveOpenOrders() { 
                 localStorage.setItem('openOrders', JSON.stringify(App.state.openOrders));
+            },
+            saveDiscount() {
+                localStorage.setItem('discount', JSON.stringify(App.state.discount));
             }
         }
     };
