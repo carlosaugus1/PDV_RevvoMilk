@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDV Revvo Milk - Touch</title>
+    <link rel="icon" href="image/Icoacaidaserra.ico" type="image/x-icon">
+    <!-- Links para os arquivos de Estilo e PDF -->
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <img src="image/revvo_milk.png" alt="Logo da Revvo Milk" style="height: 180px;">
+            </div>
+            <div class="subtitle">Sistema para controle de vendas</div>
+            <div class="current-date" id="current-date">--/--/----</div>
+        </header>
+        
+        <!-- Abas de Navegação (Nova aba "Despesas" adicionada) -->
+        <div class="tabs">
+            <div class="tab active" data-tab="venda">🛒 <span>Venda</span></div>
+            <div class="tab" data-tab="produtos">🍦 <span>Produtos</span></div>
+            <div class="tab" data-tab="comandas">
+                <span>📋</span> Comandas
+                <span class="notification-badge" id="open-orders-count" style="display: none;">0</span>
+            </div>
+            <div class="tab" data-tab="historico">📜 <span>Histórico</span></div>
+            <!-- NOVA ABA DE DESPESAS -->
+            <div class="tab" data-tab="despesas">💸 <span>Despesas</span></div>
+            <div class="tab" data-tab="admin">⚙️ <span>Administrativo</span></div>
+        </div>
+        
+        <!-- Conteúdo da Aba: Venda -->
+        <div class="tab-content active" id="venda-tab">
+            
+            <!-- BALÃO DE DESCONTO (NOVO) -->
+            <div id="discount-balloon" class="discount-balloon" style="display: none;">
+                <span class="discount-icon">🏷️</span>
+                <div class="discount-text">
+                    <span class="discount-title">PROMOÇÃO ATIVA!</span>
+                    <span id="discount-details">10% OFF em Açaí</span>
+                </div>
+            </div>
+
+            <div class="section-card">
+                <h2 class="section-title">
+                    <span>Venda por KG</span>
+                    <span class="product-price">R$ <span id="weighted-product-price-display">0.00</span>/kg</span>
+                </h2>
+                
+                <div class="product-type-selector">
+                    <button class="quick-add-btn active" data-type="acai">
+                        <div class="product-type-icon">
+                            <img src="image/acai.png" alt="Ícone de Açaí" style="width: 100%; height: 100%;">
+                        </div>
+                        Açaí
+                    </button>
+                    <button class="quick-add-btn" data-type="sorvete">
+                        <div class="product-type-icon">
+                           <img src="image/sorvete.png" alt="Ícone de Sorvete" style="width: 100%; height: 100%;">
+                        </div>
+                        Sorvete
+                    </button>
+                </div>
+                
+                <div class="weight-controls">
+                    <input type="number" class="weight-input" id="weight-input" placeholder="Gramas" min="0">
+                    <button id="add-to-cart" class="touch-btn btn-primary">Adicionar</button>
+                </div>
+                
+                <div class="product-info">
+                    <div>Valor calculado:</div>
+                    <div class="product-price">R$ <span id="calculated-price">0.00</span></div>
+                </div>
+
+                <div class="quick-add-buttons">
+                    <!-- Botões gerados via JS -->
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <h2 class="section-title">Carrinho de Vendas</h2>
+                <div class="cart-items" id="cart-items">
+                    <div class="empty-state">Carrinho vazio</div>
+                </div>
+                
+                <div class="cart-summary">
+                    <div class="summary-row">
+                        <span>Subtotal:</span>
+                        <span id="subtotal">R$ 0,00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="total">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="finish-sale" class="touch-btn btn-success">Finalizar Venda</button>
+                    <button id="hold-sale" class="touch-btn btn-warning">Pagamento Posterior</button>
+                    <button id="cancel-sale" class="touch-btn btn-danger">Cancelar Venda</button>
+                </div>
+            </div>
+            
+            <div class="section-card">
+                <h2 class="section-title">Tipo de Venda</h2>
+                <div class="delivery-mode-selector" id="delivery-mode-selector">
+                    <button class="delivery-mode-btn active" data-mode="balcao">🏪 Balcão</button>
+                    <button class="delivery-mode-btn" data-mode="entrega">🚚 Entrega</button>
+                </div>
+                <div class="delivery-info-section" id="delivery-info-section" style="display: none;">
+                    <input type="text" id="delivery-customer-name" class="admin-input" placeholder="Nome do Cliente">
+                    <input type="text" id="delivery-customer-address" class="admin-input" placeholder="Endereço">
+                    <input type="number" id="delivery-fee" class="admin-input" placeholder="Valor da Entrega (R$)" min="0" step="0.01">
+                </div>
+            </div>
+            
+            <div class="section-card payment-section">
+                <h2 class="section-title">Pagamento</h2>
+                <div class="payment-options">
+                    <div class="payment-option" data-method="cash"><i>💵</i><div>Dinheiro</div></div>
+                    <div class="payment-option" data-method="card"><i>💳</i><div>Cartão</div></div>
+                    <div class="payment-option" data-method="pix"><i>📱</i><div>PIX</div></div>
+                </div>
+                
+                <div class="cash-input" id="cash-input">
+                    <input type="number" id="cash-received" placeholder="Valor recebido em R$">
+                    <div class="change-display" id="change-display">
+                        Troco: R$ <span id="change-amount">0,00</span>
+                    </div>
+                </div>
+                
+                <button id="confirm-payment" class="touch-btn btn-success" style="width: 100%; margin-top: 10px; display: none;">
+                    Confirmar Pagamento
+                </button>
+            </div>
+        </div>
+        
+        <!-- Conteúdo da Aba: Produtos -->
+        <div class="tab-content" id="produtos-tab">
+            <div class="section-card">
+                <h2 class="section-title">Produtos</h2>
+                <div class="search-container" style="margin-bottom: 15px;">
+                    <input type="search" id="product-search" class="admin-input" placeholder="🔍 Pesquisar produto...">
+                </div>
+                <div class="products-categories" id="products-categories-list"></div>
+                <div class="products-grid" id="products-grid"></div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo da Aba: Comandas -->
+        <div class="tab-content" id="comandas-tab">
+            <div class="section-card">
+                <h2 class="section-title">Comandas em Aberto</h2>
+                <div class="open-orders-grid" id="open-orders-grid">
+                    <div class="empty-state">Nenhuma comanda em aberto</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Conteúdo da Aba: Histórico -->
+        <div class="tab-content" id="historico-tab">
+            <div class="section-card">
+                <h2 class="section-title">Histórico de Vendas</h2>
+                <div class="history-controls">
+                    <input type="date" class="date-selector" id="history-date">
+                    <button id="export-history-pdf" class="touch-btn btn-secondary">Exportar Dia</button>
+                    <button id="add-manual-sale-btn" class="touch-btn btn-primary">Adicionar</button>
+                </div>
+                <div class="sales-history" id="sales-history">
+                    <div class="empty-state">Nenhuma venda para esta data</div>
+                </div>
+                
+                <div class="cart-summary" id="history-summary" style="margin-top: 15px; display: none;">
+                    <div class="summary-row">
+                        <span>Total em Produtos:</span>
+                        <span id="history-products-total">R$ 0,00</span>
+                    </div>
+                    <div class="summary-row">
+                        <span>Total em Entregas:</span>
+                        <span id="history-delivery-total">R$ 0,00</span>
+                    </div>
+                    <div class="summary-row" style="color: var(--danger);">
+                        <span>Total em Despesas:</span>
+                        <span id="history-expenses-total">R$ 0,00</span>
+                    </div>
+                    <div class="summary-row total">
+                        <span>Saldo do Dia:</span>
+                        <span id="history-grand-total">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Aba: Despesas -->
+        <div class="tab-content" id="despesas-tab">
+            <div class="section-card">
+                <h2 class="section-title">Registrar Nova Despesa</h2>
+                <div id="add-expense-form" class="admin-controls" style="grid-template-columns: 1fr; gap: 10px;">
+                    <input type="text" id="new-expense-name" class="admin-input" placeholder="Nome da Despesa (Ex: Gás, Aluguel)">
+                    <input type="text" id="new-expense-desc" class="admin-input" placeholder="Descrição (Opcional)">
+                    <input type="number" id="new-expense-value" class="admin-input" placeholder="Valor (R$)">
+                    <button id="add-new-expense-btn" class="touch-btn btn-primary" style="width:100%;">Adicionar Despesa</button>
+                </div>
+            </div>
+            <div class="section-card">
+                <h2 class="section-title">Despesas do Dia</h2>
+                <div class="history-controls">
+                    <input type="date" class="date-selector" id="expense-date">
+                </div>
+                <div class="sales-history" id="expenses-history-list">
+                    <div class="empty-state">Nenhuma despesa para esta data</div>
+                </div>
+                <div class="cart-summary" id="expenses-summary" style="margin-top: 15px; display: none;">
+                    <div class="summary-row total" style="color: var(--danger);">
+                        <span>Total de Despesas do Dia:</span>
+                        <span id="expenses-total-today">R$ 0,00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Conteúdo da Aba: Administrativo -->
+        <div class="tab-content" id="admin-tab">
+            
+            <!-- NOVA SEÇÃO DE DESCONTOS (Antes do login) -->
+            <div class="section-card discount-section">
+                <h2 class="section-title">Gerenciar Promoções</h2>
+                <div class="discount-controls-container">
+                    <div class="discount-toggle-row">
+                        <label class="switch">
+                            <input type="checkbox" id="discount-active-check">
+                            <span class="slider round"></span>
+                        </label>
+                        <span class="toggle-label">Ativar Desconto</span>
+                    </div>
+                    
+                    <div id="discount-config-area" class="discount-config-area disabled">
+                        <div class="admin-controls">
+                            <label>Porcentagem (%):</label>
+                            <input type="number" id="discount-percentage" class="admin-input" value="10" min="1" max="100">
+                        </div>
+                        
+                        <div class="discount-targets">
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="discount-target-acai">
+                                <span class="checkmark"></span>
+                                Aplicar no Açaí
+                            </label>
+                            <label class="checkbox-container">
+                                <input type="checkbox" id="discount-target-sorvete">
+                                <span class="checkmark"></span>
+                                Aplicar no Sorvete
+                            </label>
+                        </div>
+                        <button id="save-discount-config" class="touch-btn btn-primary" style="width: 100%; height: 45px; margin-top: 10px;">Salvar Configuração</button>
+                    </div>
+                </div>
+            </div>
+            <!-- FIM SEÇÃO DE DESCONTOS -->
+
+            <div class="section-card">
+                <div id="login-section">
+                    <h2 class="section-title">Acesso Restrito</h2>
+                    <div class="login-form">
+                        <input type="text" id="username" class="admin-input" placeholder="Usuário" autocomplete="off">
+                        <input type="password" id="password" class="admin-input" placeholder="Senha" autocomplete="off">
+                        <button id="login-btn" class="touch-btn btn-primary">Entrar</button>
+                    </div>
+                </div>
+
+                <div class="logged-in" id="admin-controls-panel">
+                    <div class="logged-in-header">
+                         <div class="user-info">Logado como: <span id="logged-user">Admin</span></div>
+                         <button id="logout-btn" class="touch-btn btn-secondary" style="height: auto; padding: 10px 15px;">Sair</button>
+                    </div>
+                    
+                    <div class="admin-sub-tabs">
+                        <div class="admin-sub-tab active" data-subtab="produtos">Produtos e Preços</div>
+                        <div class="admin-sub-tab" data-subtab="relatorios">Relatórios</div>
+                        <div class="admin-sub-tab" data-subtab="config">Configurações</div>
+                    </div>
+
+                    <div class="admin-sub-content active" id="admin-produtos-content">
+                        <div class="admin-section">
+                            <h3>Preço por KG</h3>
+                            <div class="admin-controls">
+                                <label for="acai-price">Açaí (R$/kg)</label>
+                                <input type="number" id="acai-price" class="admin-input" step="0.01">
+                            </div>
+                             <button id="update-acai-price" class="touch-btn btn-primary" style="width:100%; margin-bottom: 10px;">Atualizar Preço Açaí</button>
+                             
+                             <div class="admin-controls">
+                                <label for="sorvete-price">Sorvete (R$/kg)</label>
+                                <input type="number" id="sorvete-price" class="admin-input" step="0.01">
+                            </div>
+                             <button id="update-sorvete-price" class="touch-btn btn-primary" style="width:100%; margin-bottom: 10px;">Atualizar Preço Sorvete</button>
+                        </div>
+                        <div class="admin-section">
+                            <h3>Adicionar Novo Produto</h3>
+                            <div id="add-product-form" class="admin-controls" style="grid-template-columns: 1fr; gap: 10px;">
+                                <input type="text" id="new-product-name" class="admin-input" placeholder="Nome do Produto">
+                                <input type="number" id="new-product-price" class="admin-input" placeholder="Preço (R$)">
+                                <input type="text" id="new-product-category" class="admin-input" placeholder="Categoria (ex: Bebidas, Doces)">
+                                <button id="add-new-product-btn" class="touch-btn btn-primary" style="width:100%;">Adicionar Produto</button>
+                            </div>
+                        </div>
+                        <div class="admin-section">
+                            <h3>Gerenciar Produtos da Vitrine</h3>
+                            <div class="products-management-grid" id="products-management"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="admin-sub-content" id="admin-relatorios-content">
+                        <div class="admin-section">
+                            <h3>Relatório Mensal</h3>
+                            <div class="admin-controls" style="grid-template-columns: 1fr; gap: 10px;">
+                                <label for="report-month-select">Selecione o Mês e Ano:</label>
+                                <input type="month" id="report-month-select" class="admin-input">
+                                <button id="generate-monthly-report-pdf" class="touch-btn btn-primary" style="width:100%;">Gerar PDF do Mês</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="admin-sub-content" id="admin-config-content">
+                        <div class="admin-section">
+                            <h3>Senha de Exclusão</h3>
+                            <div class="admin-controls">
+                                <label for="delete-password">Nova senha (4 dígitos)</label>
+                                <input type="password" id="delete-password" class="admin-input" maxlength="4">
+                            </div>
+                             <button id="update-delete-password" class="touch-btn btn-primary" style="width:100%;">Atualizar Senha</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modais -->
+    <div class="modal" id="password-modal">
+        <div class="modal-content">
+            <h3>Excluir Item</h3>
+            <p>Digite a senha para confirmar a exclusão:</p>
+            <input type="password" class="password-input" id="confirm-delete-password" maxlength="4" placeholder="Senha">
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="confirm-delete" class="touch-btn btn-danger" style="flex: 1;">Confirmar</button>
+                <button id="cancel-delete" class="touch-btn btn-secondary" style="flex: 1;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="receipt-modal">
+        <div class="modal-content">
+            <h3>Venda Finalizada</h3>
+            <div id="receipt-content"></div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="print-receipt-btn" class="touch-btn btn-success" style="flex: 1;">Imprimir Recibo</button>
+                <button id="close-receipt-btn" class="touch-btn btn-secondary" style="flex: 1;">Fechar</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal" id="manual-sale-modal">
+        <div class="modal-content">
+            <h3>Adicionar Venda Manual</h3>
+            <div class="modal-body" id="manual-sale-form">
+                <div class="admin-controls" style="grid-template-columns: 1fr; text-align: left;">
+                    <label for="manual-product-select">Selecionar Produto:</label>
+                    <select id="manual-product-select" class="admin-input"></select>
+                </div>
+                <div class="admin-controls" id="manual-acai-weight-section" style="display: none; grid-template-columns: 1fr; text-align: left;">
+                    <label for="manual-acai-weight">Peso em Gramas:</label>
+                    <input type="number" id="manual-acai-weight" class="admin-input" placeholder="Gramas">
+                </div>
+                <button id="manual-add-item-btn" class="touch-btn btn-primary" style="width: 100%; margin: 10px 0; height: 50px;">Adicionar Item</button>
+
+                <h4>Itens da Venda</h4>
+                <div class="cart-items" id="manual-sale-cart-items" style="max-height: 150px;">
+                    <div class="empty-state">Nenhum item</div>
+                </div>
+                 <div class="cart-summary" id="manual-sale-summary" style="display: none;">
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="manual-sale-total">R$ 0,00</span>
+                    </div>
+                </div>
+
+                <h4>Pagamento</h4>
+                <div class="payment-options" id="manual-payment-options">
+                    <div class="payment-option" data-method="cash" style="padding: 10px;"><i>💵</i></div>
+                    <div class="payment-option" data-method="card" style="padding: 10px;"><i>💳</i></div>
+                    <div class="payment-option" data-method="pix" style="padding: 10px;"><i>📱</i></div>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="save-manual-sale-btn" class="touch-btn btn-success" style="flex: 1;">Salvar Venda</button>
+                <button id="close-manual-sale-btn" class="touch-btn btn-secondary" style="flex: 1;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="hold-sale-modal">
+        <div class="modal-content">
+            <h3>Pagamento Posterior</h3>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label for="customer-name">Nome do Cliente (para identificação)</label>
+                    <input type="text" id="customer-name" class="admin-input" placeholder="Ex: Mesa 02, João, etc.">
+                </div>
+                <div class="form-group">
+                    <label for="existing-order-select">Adicionar a uma comanda existente?</label>
+                    <select id="existing-order-select" class="admin-input">
+                        <option value="new">Salvar como nova comanda</option>
+                    </select>
+                </div>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="save-hold-sale-btn" class="touch-btn btn-success" style="flex: 1;">Salvar Comanda</button>
+                <button id="close-hold-sale-btn" class="touch-btn btn-secondary" style="flex: 1;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="modal" id="open-order-modal">
+        <div class="modal-content">
+            <h3 id="open-order-title">Finalizar Comanda</h3>
+            <div class="modal-body">
+                <div class="order-timer" id="open-order-timer">Tempo em aberto: 00:00</div>
+                
+                <h4>Itens da Comanda</h4>
+                <div class="open-order-items" id="open-order-items-list">
+                </div>
+                
+                <div class="cart-summary" style="margin-top: 0;">
+                    <div class="summary-row total">
+                        <span>Total:</span>
+                        <span id="open-order-total">R$ 0,00</span>
+                    </div>
+                </div>
+                
+                <div class="payment-section" style="margin-top: 15px;">
+                    <h2 class="section-title" style="font-size: 1.2rem; margin-bottom: 10px;">Forma de Pagamento</h2>
+                    <div class="payment-options" id="open-order-payment-options">
+                        <div class="payment-option" data-method="cash"><i>💵</i><div>Dinheiro</div></div>
+                        <div class="payment-option" data-method="card"><i>💳</i><div>Cartão</div></div>
+                        <div class="payment-option" data-method="pix"><i>📱</i><div>PIX</div></div>
+                    </div>
+                    <div class="cash-input" id="open-order-cash-input">
+                        <input type="number" id="open-order-cash-received" placeholder="Valor recebido em R$">
+                        <div class="change-display" id="open-order-change-display">
+                            Troco: R$ <span id="open-order-change-amount">0,00</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="confirm-open-order-payment" class="touch-btn btn-success" style="flex: 1;">Confirmar Pagamento</button>
+                <button id="close-open-order-btn" class="touch-btn btn-secondary" style="flex: 1;">Cancelar</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+
+    <!-- Link para o arquivo JavaScript principal -->
+    <script src="app.js"></script>
+</body>
+</html>
