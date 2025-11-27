@@ -822,6 +822,10 @@ input[type="month"] {
     margin-bottom: 15px;
     white-space: pre-wrap;
     word-wrap: break-word;
+    /* MUDANÇAS APLICADAS AQUI */
+    max-height: 50vh; /* Limita a altura a 50% da altura da tela */
+    overflow-y: auto; /* Adiciona barra de rolagem se necessário */
+    font-size: 14px;  /* Garante legibilidade */
 }
 
 .order-timer {
