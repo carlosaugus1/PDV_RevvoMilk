@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
             openOrders: [], 
             products: [...DEFAULT_PRODUCTS], // Inicializa com padrão
             config: {
-                acaiPricePerKg: 43.00, // Variável renomeada (sem acento)
-                sorvetePricePerKg: 43.00, 
+                acaiPricePerKg: 44.00, // Variável renomeada (sem acento)
+                sorvetePricePerKg: 44.00, 
                 deletePassword: '1015',
             },
             discount: {
