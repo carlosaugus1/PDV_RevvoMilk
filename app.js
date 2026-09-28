@@ -46,7 +46,7 @@ document.addEventListener('DOMContentLoaded', () => {
             config: {
                 acaiPricePerKg: 44.00, // Variável renomeada (sem acento)
                 sorvetePricePerKg: 44.00, 
-                deletePassword: '1015',
+                deletePassword: '1010',
             },
             discount: {
                 active: false,
@@ -162,6 +162,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 openOrderChangeAmount: document.getElementById('open-order-change-amount'),
                 confirmOpenOrderPaymentButton: document.getElementById('confirm-open-order-payment'),
                 closeOpenOrderButton: document.getElementById('close-open-order-btn'),
+                deleteOpenOrderButton: document.getElementById('delete-open-order-btn'),
+                deleteOpenOrderModal: document.getElementById('delete-open-order-modal'),
+                deleteOpenOrderMessage: document.getElementById('delete-open-order-message'),
+                deleteOpenOrderPassword: document.getElementById('delete-open-order-password'),
+                confirmDeleteOpenOrderButton: document.getElementById('confirm-delete-open-order-btn'),
+                cancelDeleteOpenOrderButton: document.getElementById('cancel-delete-open-order-btn'),
 
                 deliveryModeSelector: document.getElementById('delivery-mode-selector'),
                 deliveryInfoSection: document.getElementById('delivery-info-section'),
@@ -254,6 +260,13 @@ document.addEventListener('DOMContentLoaded', () => {
             });
             
             this.DOM.closeOpenOrderButton.addEventListener('click', () => this.handlers.closeOpenOrderModal());
+            this.DOM.deleteOpenOrderButton.addEventListener('click', () => this.handlers.requestDeleteOpenOrder());
+            this.DOM.confirmDeleteOpenOrderButton.addEventListener('click', () => this.handlers.confirmDeleteOpenOrder());
+            this.DOM.cancelDeleteOpenOrderButton.addEventListener('click', () => this.handlers.cancelDeleteOpenOrder());
+            this.DOM.deleteOpenOrderPassword.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter') this.handlers.confirmDeleteOpenOrder();
+                if (event.key === 'Escape') this.handlers.cancelDeleteOpenOrder();
+            });
             this.DOM.openOrderPaymentOptions.querySelectorAll('.payment-option').forEach(el => {
                 el.addEventListener('click', () => this.handlers.selectOpenOrderPaymentMethod(el));
             });
@@ -643,6 +656,62 @@ document.addEventListener('DOMContentLoaded', () => {
                 App.DOM.openOrderModal.style.display = 'none';
             },
             
+            requestDeleteOpenOrder() {
+                const order = App.state.ui.currentOpenOrder;
+                if (!order || !App.state.openOrders.some(o => o.id === order.id)) {
+                    return App.utils.showNotification('Comanda não encontrada.', 'error');
+                }
+                const itemCount = Array.isArray(order.items) ? order.items.length : 0;
+                App.DOM.deleteOpenOrderMessage.textContent =
+                    `Excluir definitivamente a comanda de "${order.customerName}"? ` +
+                    `Ela contém ${itemCount} ${itemCount === 1 ? 'item' : 'itens'} ` +
+                    `e totaliza R$ ${order.total.toFixed(2)}. ` +
+                    'Os itens serão perdidos e esta ação não pode ser desfeita.';
+                App.DOM.deleteOpenOrderPassword.value = '';
+                App.DOM.openOrderModal.style.display = 'none';
+                App.DOM.deleteOpenOrderModal.style.display = 'flex';
+                App.DOM.deleteOpenOrderPassword.focus();
+            },
+
+            cancelDeleteOpenOrder() {
+                App.DOM.deleteOpenOrderPassword.value = '';
+                App.DOM.deleteOpenOrderModal.style.display = 'none';
+                if (App.state.ui.currentOpenOrder) App.DOM.openOrderModal.style.display = 'flex';
+            },
+
+            confirmDeleteOpenOrder() {
+                const order = App.state.ui.currentOpenOrder;
+                if (!order) {
+                    App.DOM.deleteOpenOrderPassword.value = '';
+                    App.DOM.deleteOpenOrderModal.style.display = 'none';
+                    return App.utils.showNotification('Nenhuma comanda selecionada.', 'error');
+                }
+                if (App.DOM.deleteOpenOrderPassword.value !== App.state.config.deletePassword) {
+                    App.DOM.deleteOpenOrderPassword.value = '';
+                    App.DOM.deleteOpenOrderPassword.focus();
+                    return App.utils.showNotification('Senha de exclusão incorreta.', 'error');
+                }
+                if (!App.state.openOrders.some(o => o.id === order.id)) {
+                    App.DOM.deleteOpenOrderPassword.value = '';
+                    App.DOM.deleteOpenOrderModal.style.display = 'none';
+                    this.closeOpenOrderModal();
+                    return App.utils.showNotification('Comanda não encontrada.', 'error');
+                }
+                const nextOrders = App.state.openOrders.filter(o => o.id !== order.id);
+                try {
+                    localStorage.setItem('openOrders', JSON.stringify(nextOrders));
+                } catch (error) {
+                    console.error('Erro ao salvar exclusão da comanda:', error);
+                    return App.utils.showNotification('Não foi possível excluir a comanda. Verifique o armazenamento.', 'error');
+                }
+                App.state.openOrders = nextOrders;
+                App.DOM.deleteOpenOrderPassword.value = '';
+                App.DOM.deleteOpenOrderModal.style.display = 'none';
+                this.closeOpenOrderModal();
+                App.render.openOrdersGrid();
+                App.utils.showNotification(`Comanda de "${order.customerName}" excluída.`, 'warning');
+            },
+
             selectOpenOrderPaymentMethod(el) {
                 App.state.ui.openOrderPaymentMethod = el.dataset.method;
                 App.DOM.openOrderPaymentOptions.querySelectorAll('.payment-option').forEach(o => o.classList.remove('selected'));
