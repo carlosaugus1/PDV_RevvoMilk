@@ -1326,3 +1326,12 @@ input[type="month"] {
 
     .notification { right: 10px; top: 10px; max-width: calc(100vw - 20px); }
 }
+
+/* Exclusão de comanda aberta */
+.open-order-actions, .open-order-delete-actions { display: flex; gap: 10px; margin-top: 15px; }
+.open-order-actions { flex-wrap: wrap; }
+.open-order-actions .touch-btn { flex: 1 1 calc(50% - 10px); min-width: 0; height: auto; min-height: 54px; padding: 10px; }
+.open-order-actions #delete-open-order-btn { flex-basis: 100%; }
+.open-order-delete-actions .touch-btn { flex: 1; height: auto; min-height: 54px; padding: 10px; }
+#delete-open-order-modal .modal-content > label { display: block; text-align: left; font-size: 13px; font-weight: 600; }
+@media (max-width: 480px) { .open-order-delete-actions { flex-direction: column; } }
